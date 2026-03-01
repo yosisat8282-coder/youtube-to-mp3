@@ -68,4 +68,31 @@ if url:
                     'no_warnings': True,
                 }
 
-                st.write("שואב נתוני ש
+                st.write("שואב נתוני שמע מהשרת...")
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    video_title = info.get('title', 'שיעור')
+                
+                transcription_text = ""
+                actual_file = "final_audio.mp3"
+
+                if "תמלול" in action:
+                    if has_groq:
+                        st.write("מפענח שמע לטקסט (Groq AI)...")
+                        client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+                        with open(actual_file, "rb") as audio_file:
+                            transcription_text = client.audio.transcriptions.create(
+                                file=(actual_file, audio_file.read()),
+                                model="whisper-large-v3",
+                                language="he",
+                                response_format="text"
+                            )
+                    else:
+                        st.error("מפתח Groq חסר ב-Secrets!")
+
+                status.update(label="העיבוד הושלם!", state="complete")
+
+            # תצוגת התוצאות למשתמש
+            st.markdown(f'<div class="status-card"><h3>✅ {video_title}</h3></div>', unsafe_allow_html=True)
+
+            if
