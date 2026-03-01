@@ -7,16 +7,15 @@ import tempfile
 # הגדרות דף Pro
 st.set_page_config(page_title="Audio-Tech Ultra", page_icon="🎙️", layout="centered")
 
-# עיצוב Cyber-Tech RTL יוקרתי (2026)
+# עיצוב Cyber-Tech RTL יוקרתי
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
     html, body, [class*="css"]  { font-family: 'Assistant', sans-serif; direction: rtl; text-align: right; }
     .stApp { background: #0b0f19; color: #e2e8f0; }
-    h1 { background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; font-weight: 800; font-size: 3rem !important; }
+    h1 { background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; font-weight: 800; }
     .stButton>button { background: linear-gradient(90deg, #3b82f6, #8b5cf6); color: white; border: none; border-radius: 12px; padding: 12px; font-weight: bold; width: 100%; transition: 0.3s; }
-    .stButton>button:hover { transform: scale(1.02); box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); }
-    .stTextInput input { background-color: #111827 !important; color: white !important; border: 1px solid #1f2937 !important; text-align: right; border-radius: 10px; }
+    .stTextInput input { background-color: #111827 !important; color: white !important; border: 1px solid #1f2937 !important; text-align: right; }
     .status-card { background: #1f2937; padding: 20px; border-radius: 15px; border: 1px solid #374151; margin-top: 20px; text-align: center; }
     .transcription-box { background: #111827; padding: 15px; border-radius: 12px; border-right: 5px solid #60a5fa; direction: rtl; text-align: right; color: #cbd5e1; white-space: pre-wrap; margin-top: 10px; line-height: 1.6; }
     label { text-align: right !important; display: block; direction: rtl; color: #94a3b8 !important; }
@@ -24,7 +23,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 st.title("🎙️ Audio-Tech Ultra")
-st.write("מערכת פרימיום לחילוץ ותמלול שיעורים והרצאות")
+st.write("מערכת פרימיום לחילוץ ותמלול שיעורים (Stealth Mode)")
 st.write("---")
 
 # בדיקת מפתחות ב-Secrets
@@ -44,7 +43,7 @@ if url:
         try:
             with st.status("מעבד נתונים... נא להמתין", expanded=True) as status:
                 
-                # ניהול עוגיות זמניות למניעת חסימת 403
+                # ניהול עוגיות זמניות
                 cookie_path = None
                 if has_cookies:
                     with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".txt", encoding="utf-8") as tmp:
@@ -52,10 +51,10 @@ if url:
                         cookie_path = tmp.name
                     st.write("✅ אימות Stealth הופעל.")
 
-                # הגדרות הורדה גמישות (ba/b) למניעת שגיאת Format
+                # הגדרת הפורמט הגמיש ביותר (ba/b)
                 output_filename = "final_audio"
                 ydl_opts = {
-                    'format': 'bestaudio/best',
+                    'format': 'ba/b', # מחפש אודיו הכי טוב, אם אין לוקח וידאו הכי טוב
                     'postprocessors': [{
                         'key': 'FFmpegExtractAudio',
                         'preferredcodec': 'mp3',
@@ -93,7 +92,7 @@ if url:
 
                 status.update(label="העיבוד הושלם!", state="complete")
 
-            # תצוגת התוצאות למשתמש
+            # תצוגת התוצאות
             st.markdown(f'<div class="status-card"><h3>✅ {video_title}</h3></div>', unsafe_allow_html=True)
 
             if transcription_text:
@@ -107,7 +106,7 @@ if url:
                         st.audio(f.read())
                         st.download_button(label="📥 הורד קובץ MP3", data=f, file_name=f"{video_title}.mp3")
                 else:
-                    st.error("קובץ השמע לא נמצא בשרת.")
+                    st.error("קובץ השמע לא נמצא.")
 
             # ניקוי קבצים מהשרת
             if os.path.exists(actual_file):
