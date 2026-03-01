@@ -1,79 +1,76 @@
 import streamlit as st
-import requests
+import yt_dlp
+import os
 
-st.set_page_config(page_title="Audio-Tech Pro | שיעורים והרצאות", page_icon="📚", layout="centered")
+# הגדרות דף
+st.set_page_config(page_title="Audio-Tech Pro", page_icon="📚", layout="centered")
 
+# עיצוב Cyber-Tech
 st.markdown("""
     <style>
-    .stApp { background-color: #0f172a; color: white; }
-    .stButton>button { background: linear-gradient(90deg, #0ea5e9, #2563eb); color: white; border-radius: 10px; height: 3em; font-weight: bold; width: 100%; }
-    .stTextInput input { background-color: #1e293b !important; color: white !important; }
+    .stApp { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f8fafc; }
+    h1 { background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; font-weight: 800; }
+    .stButton>button { background: linear-gradient(90deg, #0ea5e9, #2563eb); color: white; border-radius: 12px; width: 100%; font-weight: bold; border: none; padding: 10px; }
+    .stTextInput input { background-color: #1e293b !important; color: white !important; border: 1px solid #334155 !important; border-radius: 10px; }
     div[data-testid="stMarkdownContainer"] p { text-align: right; direction: rtl; }
     label { text-align: right !important; display: block; direction: rtl; }
-    .info-box { background: rgba(56, 189, 248, 0.1); border: 1px solid #38bdf8; padding: 15px; border-radius: 10px; direction: rtl; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("📚 מוריד שיעורים והרצאות")
-st.write("מערכת ייעודית לקבצים ארוכים וכבדים")
-
-st.markdown("""
-<div class="info-box">
-💡 <b>טיפ לבוס:</b> עבור שיעורים ארוכים, המערכת תייצר לינק ישיר. 
-אם הסרטון מעל שעה, מומלץ להשתמש באיכות 64kbps או 128kbps כדי לחסוך מקום בטלפון.
-</div>
-""", unsafe_allow_html=True)
-
+st.write("אופטימיזציה לסרטונים ארוכים")
 st.write("---")
 
-url = st.text_input("הדבק לינק לשיעור מיוטיוב:", placeholder="https://youtube.com/watch?v=...")
+url = st.text_input("הדבק לינק מיוטיוב כאן:", placeholder="https://youtube.com/watch?v=...")
 
-quality = st.select_slider("איכות שמע (נמוך מומלץ לשיעורים ארוכים):", 
-                          options=["64", "128", "192", "320"], 
+quality = st.select_slider("איכות שמע (64 מומלץ לשיעורים ארוכים מאוד):", 
+                          options=["64", "128", "192"], 
                           value="128")
 
 if url:
-    if st.button("חלץ שיעור להורדה"):
+    if st.button("התחל הורדת שיעור"):
         try:
-            with st.spinner("מתחבר לשרתי המדיה... זה עשוי לקחת כמה שניות לסרטון ארוך"):
-                # שימוש בשרת Cobalt יציב
-                payload = {
-                    "url": url,
-                    "downloadMode": "audio",
-                    "audioFormat": "mp3",
-                    "audioBitrate": quality,
-                    "isNoTTWatermark": True
-                }
-                headers = {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json"
+            with st.status("🚀 מעבד את השיעור... נא להמתין", expanded=True) as status:
+                st.write("מתחבר ליוטיוב באמצעות מעקף...")
+                
+                # הגדרות קשוחות לעקיפת חסימות וטיפול בקבצים ארוכים
+                ydl_opts = {
+                    'format': 'bestaudio/best',
+                    'postprocessors': [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'mp3',
+                        'preferredquality': quality,
+                    }],
+                    'outtmpl': 'lesson_audio.%(ext)s',
+                    'quiet': True,
+                    'no_warnings': True,
+                    'source_address': '0.0.0.0', # עוזר לעקוף חסימות IP
+                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
                 }
                 
-                # פנייה לשרת חזק יותר
-                response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers)
-                data = response.json()
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    title = info.get('title', 'audio_file')
+                    file_path = "lesson_audio.mp3"
+                    file_size = os.path.getsize(file_path) / (1024 * 1024)
                 
-                if data.get("status") == "stream" or data.get("status") == "picker" or data.get("status") == "redirect":
-                    download_url = data.get("url")
-                    st.success("✅ השיעור מוכן להורדה!")
-                    
-                    st.markdown(f"""
-                        <div style="text-align: center; margin-top: 20px;">
-                            <a href="{download_url}" target="_blank" style="text-decoration: none;">
-                                <button style="background-color: #10b981; color: white; padding: 15px 30px; border: none; border-radius: 10px; font-size: 1.2em; cursor: pointer; font-weight: bold;">
-                                     לחץ כאן להורדת השיעור (MP3) 📥
-                                </button>
-                            </a>
-                            <p style="margin-top:10px; font-size: 0.9em; color: #94a3b8;">הלינק יפתח את הקובץ להורדה ישירה</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-                    st.audio(download_url)
-                else:
-                    st.error("לא הצלחתי למצוא את הסרטון. וודא שהלינק תקין (לא Playlist).")
-                    
+                status.update(label="השיעור מוכן!", state="complete")
+
+            st.success(f"סיום עיבוד: {title}")
+            st.info(f"משקל הקובץ: {file_size:.2f} MB")
+
+            with open(file_path, "rb") as f:
+                st.audio(f.read())
+                st.download_button(label=f"📥 הורד שיעור ({file_size:.2f} MB)", 
+                                 data=f, 
+                                 file_name=f"{title}.mp3")
+            
+            # ניקוי קובץ זמני מהשרת
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            
         except Exception as e:
-            st.error(f"שגיאה בתקשורת: {e}")
+            st.error(f"שגיאה: יוטיוב חסם את הבקשה. נסה שוב בעוד דקה או השתמש בלינק אחר.")
 
 st.write("---")
-st.caption("סטטוס מערכת: אופטימיזציה לשיעורים ארוכים | 2026")
+st.caption("פיתוח: בוס | מותאם להרצאות ארוכות")
