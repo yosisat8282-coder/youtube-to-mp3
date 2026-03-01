@@ -50,7 +50,8 @@ if url:
                         cookie_path = tmp.name
                     st.write("✅ אימות Stealth הופעל.")
 
-                # שינוי קריטי: שימוש ב-ba (Best Audio) ללא הגבלת פורמט מקור
+                # שימוש בפורמט ba (Best Audio) עם גיבוי ל-b (Best Video)
+                # זה פותר את שגיאת ה-Requested format is not available
                 output_filename = "final_audio"
                 ydl_opts = {
                     'format': 'bestaudio/best', 
@@ -80,41 +81,4 @@ if url:
                         st.write("מפענח שמע לטקסט (Groq AI)...")
                         client = Groq(api_key=st.secrets["GROQ_API_KEY"])
                         with open(actual_file, "rb") as audio_file:
-                            transcription_text = client.audio.transcriptions.create(
-                                file=(actual_file, audio_file.read()),
-                                model="whisper-large-v3",
-                                language="he",
-                                response_format="text"
-                            )
-                    else:
-                        st.error("מפתח Groq חסר ב-Secrets!")
-
-                status.update(label="העיבוד הושלם!", state="complete")
-
-            # תצוגת התוצאות
-            st.markdown(f'<div class="status-card"><h3>✅ {video_title}</h3></div>', unsafe_allow_html=True)
-
-            if transcription_text:
-                st.subheader("📝 תמלול השיעור:")
-                st.markdown(f'<div class="transcription-box">{transcription_text}</div>', unsafe_allow_html=True)
-                st.download_button("📥 שמור תמלול (TXT)", transcription_text, file_name=f"{video_title}.txt")
-
-            if "הורדה" in action:
-                if os.path.exists(actual_file):
-                    with open(actual_file, "rb") as f:
-                        st.audio(f.read())
-                        st.download_button(label="📥 הורד קובץ MP3", data=f, file_name=f"{video_title}.mp3")
-                else:
-                    st.error("קובץ השמע לא נמצא.")
-
-            # ניקוי סופי
-            if os.path.exists(actual_file):
-                os.remove(actual_file)
-            if cookie_path and os.path.exists(cookie_path):
-                os.remove(cookie_path)
-                
-        except Exception as e:
-            st.error(f"שגיאה במערכת: {str(e)}")
-
-st.write("---")
-st.caption("Operator: Boss | System: Online 2026")
+                            transcription_text = client.audio.trans
