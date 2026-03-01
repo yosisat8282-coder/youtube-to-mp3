@@ -43,7 +43,6 @@ if url:
         try:
             with st.status("מעבד נתונים... נא להמתין", expanded=True) as status:
                 
-                # ניהול עוגיות זמניות
                 cookie_path = None
                 if has_cookies:
                     with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".txt", encoding="utf-8") as tmp:
@@ -51,10 +50,10 @@ if url:
                         cookie_path = tmp.name
                     st.write("✅ אימות Stealth הופעל.")
 
-                # הגדרות הורדה
+                # שינוי קריטי: שימוש ב-ba (Best Audio) ללא הגבלת פורמט מקור
                 output_filename = "final_audio"
                 ydl_opts = {
-                    'format': 'ba/b',
+                    'format': 'bestaudio/best', 
                     'postprocessors': [{
                         'key': 'FFmpegExtractAudio',
                         'preferredcodec': 'mp3',
@@ -68,7 +67,7 @@ if url:
                     'no_warnings': True,
                 }
 
-                st.write("שואב נתוני שמע...")
+                st.write("שואב נתוני שמע מהשרת...")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     video_title = info.get('title', 'שיעור')
@@ -108,7 +107,7 @@ if url:
                 else:
                     st.error("קובץ השמע לא נמצא.")
 
-            # ניקוי קבצים מהשרת (שימוש בבלוק סגור ותקין)
+            # ניקוי סופי
             if os.path.exists(actual_file):
                 os.remove(actual_file)
             if cookie_path and os.path.exists(cookie_path):
