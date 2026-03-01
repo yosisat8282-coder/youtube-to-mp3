@@ -4,7 +4,7 @@ import os
 from groq import Groq
 import tempfile
 
-# הגדרות דף Pro
+# הגדרות דף פרימיום
 st.set_page_config(page_title="Audio-Tech Ultra", page_icon="🎙️", layout="centered")
 
 # עיצוב Cyber-Tech RTL יוקרתי
@@ -92,7 +92,13 @@ if url:
 
                 status.update(label="העיבוד הושלם!", state="complete")
 
-            # תצוגת התוצאות למשתמש
+            # תצוגת התוצאות
             st.markdown(f'<div class="status-card"><h3>✅ {video_title}</h3></div>', unsafe_allow_html=True)
 
-            if
+            if transcription_text:
+                st.subheader("📝 תמלול השיעור:")
+                st.markdown(f'<div class="transcription-box">{transcription_text}</div>', unsafe_allow_html=True)
+                st.download_button("📥 שמור תמלול (TXT)", transcription_text, file_name=f"{video_title}.txt")
+
+            if "הורדה" in action:
+                if os.path.exists(actual_file
