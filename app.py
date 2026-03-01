@@ -4,7 +4,7 @@ import os
 from groq import Groq
 import tempfile
 
-# הגדרות דף פרימיום
+# הגדרות דף Pro
 st.set_page_config(page_title="Audio-Tech Ultra", page_icon="🎙️", layout="centered")
 
 # עיצוב Cyber-Tech RTL יוקרתי
@@ -43,7 +43,7 @@ if url:
         try:
             with st.status("מעבד נתונים... נא להמתין", expanded=True) as status:
                 
-                # ניהול עוגיות זמניות למניעת חסימת 403
+                # ניהול עוגיות זמניות
                 cookie_path = None
                 if has_cookies:
                     with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".txt", encoding="utf-8") as tmp:
@@ -51,7 +51,7 @@ if url:
                         cookie_path = tmp.name
                     st.write("✅ אימות Stealth הופעל.")
 
-                # הגדרות הורדה גמישות (ba/b) למניעת שגיאת Format
+                # הגדרות הורדה
                 output_filename = "final_audio"
                 ydl_opts = {
                     'format': 'ba/b',
@@ -68,7 +68,7 @@ if url:
                     'no_warnings': True,
                 }
 
-                st.write("שואב נתוני שמע מהשרת...")
+                st.write("שואב נתוני שמע...")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     video_title = info.get('title', 'שיעור')
@@ -101,4 +101,21 @@ if url:
                 st.download_button("📥 שמור תמלול (TXT)", transcription_text, file_name=f"{video_title}.txt")
 
             if "הורדה" in action:
-                if os.path.exists(actual_file
+                if os.path.exists(actual_file):
+                    with open(actual_file, "rb") as f:
+                        st.audio(f.read())
+                        st.download_button(label="📥 הורד קובץ MP3", data=f, file_name=f"{video_title}.mp3")
+                else:
+                    st.error("קובץ השמע לא נמצא.")
+
+            # ניקוי קבצים מהשרת (שימוש בבלוק סגור ותקין)
+            if os.path.exists(actual_file):
+                os.remove(actual_file)
+            if cookie_path and os.path.exists(cookie_path):
+                os.remove(cookie_path)
+                
+        except Exception as e:
+            st.error(f"שגיאה במערכת: {str(e)}")
+
+st.write("---")
+st.caption("Operator: Boss | System: Online 2026")
