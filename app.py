@@ -7,15 +7,16 @@ import tempfile
 # הגדרות דף Pro
 st.set_page_config(page_title="Audio-Tech Ultra", page_icon="🎙️", layout="centered")
 
-# עיצוב Cyber-Tech RTL יוקרתי
+# עיצוב Cyber-Tech RTL יוקרתי (2026)
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
     html, body, [class*="css"]  { font-family: 'Assistant', sans-serif; direction: rtl; text-align: right; }
     .stApp { background: #0b0f19; color: #e2e8f0; }
-    h1 { background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; font-weight: 800; }
+    h1 { background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; font-weight: 800; font-size: 3rem !important; }
     .stButton>button { background: linear-gradient(90deg, #3b82f6, #8b5cf6); color: white; border: none; border-radius: 12px; padding: 12px; font-weight: bold; width: 100%; transition: 0.3s; }
-    .stTextInput input { background-color: #111827 !important; color: white !important; border: 1px solid #1f2937 !important; text-align: right; }
+    .stButton>button:hover { transform: scale(1.02); box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); }
+    .stTextInput input { background-color: #111827 !important; color: white !important; border: 1px solid #1f2937 !important; text-align: right; border-radius: 10px; }
     .status-card { background: #1f2937; padding: 20px; border-radius: 15px; border: 1px solid #374151; margin-top: 20px; text-align: center; }
     .transcription-box { background: #111827; padding: 15px; border-radius: 12px; border-right: 5px solid #60a5fa; direction: rtl; text-align: right; color: #cbd5e1; white-space: pre-wrap; margin-top: 10px; line-height: 1.6; }
     label { text-align: right !important; display: block; direction: rtl; color: #94a3b8 !important; }
@@ -23,7 +24,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 st.title("🎙️ Audio-Tech Ultra")
-st.write("מערכת פרימיום לחילוץ ותמלול שיעורים (2026)")
+st.write("מערכת פרימיום לחילוץ ותמלול שיעורים והרצאות")
 st.write("---")
 
 # בדיקת מפתחות ב-Secrets
@@ -43,6 +44,7 @@ if url:
         try:
             with st.status("מעבד נתונים... נא להמתין", expanded=True) as status:
                 
+                # ניהול עוגיות זמניות למניעת חסימת 403
                 cookie_path = None
                 if has_cookies:
                     with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".txt", encoding="utf-8") as tmp:
@@ -50,7 +52,7 @@ if url:
                         cookie_path = tmp.name
                     st.write("✅ אימות Stealth הופעל.")
 
-                # הגדרות הורדה גמישות (ba/b)
+                # הגדרות הורדה גמישות (ba/b) למניעת שגיאת Format
                 output_filename = "final_audio"
                 ydl_opts = {
                     'format': 'bestaudio/best',
@@ -68,4 +70,53 @@ if url:
                 }
 
                 st.write("שואב נתוני שמע מהשרת...")
-                with yt
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    video_title = info.get('title', 'שיעור')
+                
+                transcription_text = ""
+                actual_file = "final_audio.mp3"
+
+                if "תמלול" in action:
+                    if has_groq:
+                        st.write("מפענח שמע לטקסט (Groq AI)...")
+                        client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+                        with open(actual_file, "rb") as audio_file:
+                            transcription_text = client.audio.transcriptions.create(
+                                file=(actual_file, audio_file.read()),
+                                model="whisper-large-v3",
+                                language="he",
+                                response_format="text"
+                            )
+                    else:
+                        st.error("מפתח Groq חסר ב-Secrets!")
+
+                status.update(label="העיבוד הושלם!", state="complete")
+
+            # תצוגת התוצאות למשתמש
+            st.markdown(f'<div class="status-card"><h3>✅ {video_title}</h3></div>', unsafe_allow_html=True)
+
+            if transcription_text:
+                st.subheader("📝 תמלול השיעור:")
+                st.markdown(f'<div class="transcription-box">{transcription_text}</div>', unsafe_allow_html=True)
+                st.download_button("📥 שמור תמלול (TXT)", transcription_text, file_name=f"{video_title}.txt")
+
+            if "הורדה" in action:
+                if os.path.exists(actual_file):
+                    with open(actual_file, "rb") as f:
+                        st.audio(f.read())
+                        st.download_button(label="📥 הורד קובץ MP3", data=f, file_name=f"{video_title}.mp3")
+                else:
+                    st.error("קובץ השמע לא נמצא בשרת.")
+
+            # ניקוי קבצים מהשרת
+            if os.path.exists(actual_file):
+                os.remove(actual_file)
+            if cookie_path and os.path.exists(cookie_path):
+                os.remove(cookie_path)
+                
+        except Exception as e:
+            st.error(f"שגיאה במערכת: {str(e)}")
+
+st.write("---")
+st.caption("Operator: Boss | System: Online 2026")
