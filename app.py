@@ -50,11 +50,10 @@ if url:
                         cookie_path = tmp.name
                     st.write("✅ אימות Stealth הופעל.")
 
-                # שימוש בפורמט ba (Best Audio) עם גיבוי ל-b (Best Video)
-                # זה פותר את שגיאת ה-Requested format is not available
+                # הגדרות הורדה גמישות (ba/b)
                 output_filename = "final_audio"
                 ydl_opts = {
-                    'format': 'bestaudio/best', 
+                    'format': 'bestaudio/best',
                     'postprocessors': [{
                         'key': 'FFmpegExtractAudio',
                         'preferredcodec': 'mp3',
@@ -69,16 +68,4 @@ if url:
                 }
 
                 st.write("שואב נתוני שמע מהשרת...")
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(url, download=True)
-                    video_title = info.get('title', 'שיעור')
-                
-                transcription_text = ""
-                actual_file = "final_audio.mp3"
-
-                if "תמלול" in action:
-                    if has_groq:
-                        st.write("מפענח שמע לטקסט (Groq AI)...")
-                        client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-                        with open(actual_file, "rb") as audio_file:
-                            transcription_text = client.audio.trans
+                with yt
