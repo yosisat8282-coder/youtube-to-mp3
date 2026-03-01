@@ -25,9 +25,7 @@ st.write("---")
 
 # --- אזור הגדרת API KEY ---
 with st.expander("🔑 הגדרות מפתח API (Groq)", expanded=False):
-    api_key_input = st.text_input("הכנס את מפתח ה-API שלך מ-Groq:", type="password", help="קבל מפתח חינם ב-console.groq.com")
-    if not api_key_input:
-        st.info("כדי להשתמש בתמלול, יש להזין מפתח API.")
+    api_key_input = st.text_input("הכנס את מפתח ה-API שלך מ-Groq:", type="password")
 
 # --- קלט משתמש ---
 url = st.text_input("הדבק לינק מיוטיוב כאן:", placeholder="https://youtube.com/...")
@@ -41,12 +39,12 @@ with col2:
 if url:
     if st.button("בצע משימה"):
         if ("תמלול" in action) and not api_key_input:
-            st.error("שגיאה: חייבים להזין מפתח API כדי לבצע תמלול.")
+            st.error("חובה להזין מפתח API לתמלול!")
         else:
             try:
-                with st.status("🚀 מעבד נתונים... נא להמתין", expanded=True) as status:
-                    st.write("מתחבר ליוטיוב...")
+                with st.status("🚀 מבצע מעקף וחילוץ נתונים...", expanded=True) as status:
                     
+                    # הבלוק המנצח ל-403
                     ydl_opts = {
                         'format': 'bestaudio/best',
                         'postprocessors': [{
@@ -54,22 +52,30 @@ if url:
                             'preferredcodec': 'mp3',
                             'preferredquality': quality,
                         }],
-                        'outtmpl': 'temp_audio.%(ext)s',
+                        'outtmpl': 'final_audio.%(ext)s',
                         'quiet': True,
                         'no_warnings': True,
-                        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                        'nocheckcertificate': True,
+                        'ignoreerrors': False,
+                        'logtostderr': False,
+                        'add_header': [
+                            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                            'Accept-Language: en-US,en;q=0.5',
+                            'Sec-Fetch-Mode: navigate'
+                        ]
                     }
                     
                     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        st.write("מתחבר לשרת...")
                         info = ydl.extract_info(url, download=True)
                         title = info.get('title', 'audio_file')
-                        file_path = "temp_audio.mp3"
+                        file_path = "final_audio.mp3"
                         file_size = os.path.getsize(file_path) / (1024 * 1024)
 
-                    # --- תמלול במידת הצורך ---
                     transcription_text = ""
                     if "תמלול" in action:
-                        st.write("מבצע תמלול AI (Groq Whisper)...")
+                        st.write("שולח לתמלול ב-Groq Cloud...")
                         client = Groq(api_key=api_key_input)
                         with open(file_path, "rb") as file:
                             transcription = client.audio.transcriptions.create(
@@ -82,25 +88,22 @@ if url:
                     
                     status.update(label="המשימה הושלמה!", state="complete")
 
-                # הצגת תוצאות
                 st.markdown(f"""<div class="metric-box"><h3 style="color:#38bdf8; margin:0;">{title}</h3><p style="color:#00ff00;">משקל: {file_size:.2f} MB</p></div>""", unsafe_allow_html=True)
 
                 if transcription_text:
-                    st.subheader("📝 תמלול הסרטון:")
+                    st.subheader("📝 תמלול:")
                     st.markdown(f'<div class="transcription-box">{transcription_text}</div>', unsafe_allow_html=True)
-                    st.download_button("הורד תמלול כקובץ טקסט", transcription_text, file_name=f"{title}.txt")
 
                 if "הורדה" in action:
                     with open(file_path, "rb") as f:
                         st.audio(f.read())
-                        st.download_button(label=f"📥 הורד קובץ MP3", data=f, file_name=f"{title}.mp3")
+                        st.download_button(label=f"📥 הורד קובץ ({file_size:.2f} MB)", data=f, file_name=f"{title}.mp3")
                 
-                # ניקוי
                 if os.path.exists(file_path):
                     os.remove(file_path)
                 
             except Exception as e:
-                st.error(f"שגיאה במערכת: {str(e)}")
+                st.error(f"שגיאה: {str(e)}")
 
 st.write("---")
-st.caption("פיתוח: בוס | Cyber-Tech Mode 2026")
+st.caption("פיתוח: בוס | מצב: Stealth Mode 2026")
