@@ -51,45 +51,17 @@ if url:
                     'quiet': True
                 }
                 
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(url, download=True)
-                    title = info.get('title', 'audio_file')
-                    file_path = "temp_audio.mp3"
-                    
-                    # חישוב גודל קובץ
-                    file_size = os.path.getsize(file_path) / (1024 * 1024) # המרה ל-MB
-                
-                st.write(f"הקובץ מוכן. גודל מוערך: {file_size:.2f} MB")
-
-                if "תמלול" in action:
-                    st.write("מריץ פרוטוקול תמלול AI...")
-                    # כאן יבוא הקוד של Groq ברגע שתזין API Key
-                    st.info("התמלול יופיע כאן ברגע שנחבר את מפתח ה-API של Groq")
-
-                status.update(label="המשימה הושלמה!", state="complete")
-
-            # הצגת נתונים למשתמש
-            st.markdown(f"""
-                <div class="metric-box">
-                    <h3 style="color:#38bdf8; margin:0;">פרטי הקובץ</h3>
-                    <p style="margin:5px 0;">שם: {title}</p>
-                    <p style="margin:5px 0; font-weight:bold; color:#00ff00;">משקל: {file_size:.2f} MB</p>
-                </div>
-            """, unsafe_allow_html=True)
-
-            if "הורדה" in action:
-                with open(file_path, "rb") as f:
-                    st.audio(f.read())
-                    st.download_button(label=f"📥 הורד קובץ ({file_size:.2f} MB)", 
-                                     data=f, 
-                                     file_name=f"{title}.mp3")
-            
-            # ניקוי קבצים זמניים
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            
-        except Exception as e:
-            st.error(f"שגיאה במערכת: {str(e)}")
-
-st.write("---")
-st.caption("פיתוח: בוס | מצב: Cyber-Modern Mode")
+              # הגדרות הורדה עם מעקף חסימה (הבלוק החדש)
+                ydl_opts = {
+                    'format': 'bestaudio/best',
+                    'postprocessors': [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'mp3',
+                        'preferredquality': quality,
+                    }],
+                    'outtmpl': 'temp_audio.%(ext)s',
+                    'quiet': True,
+                    'no_warnings': True,
+                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                    'referer': 'https://www.google.com/',
+                }
